@@ -9,17 +9,18 @@ using MTM101BaldAPI.OptionsAPI;
 using BepInEx.Logging;
 using UnityEngine;
 using MTM101BaldAPI.ObjectCreation;
+using System.Linq;
+using System.Collections.Generic;
 
-namespace DoNotGetFooled
+namespace TABSwitch
 {
     public class MyPluginInfo
     {
-        public const string NAME = "Do Not Get Fooled";
-        public const string GUID = "msf.rost.baldiplus.donotgetfooled";
+        public const string NAME = "TAB Switch";
+        public const string GUID = "rost.moment.baldiplus.tabswitch";
         public const string VERSION = "1.0";
     }
     [BepInPlugin(MyPluginInfo.GUID, MyPluginInfo.NAME, MyPluginInfo.VERSION)]
-    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
     public class BasePlugin : BaseUnityPlugin
     {
 
@@ -35,34 +36,22 @@ namespace DoNotGetFooled
             Asset = new AssetManager();
             Logger = base.Logger;
             Instance = this;
-            AssetLoader.LocalizationFromMod(Instance);
-            LoadingEvents.RegisterOnAssetsLoaded(Info, LoadMod(), LoadingEventOrder.Pre);
-            GeneratorManagement.Register(Instance, GenerationModType.Addend, (name, number, scene) =>
-            {
-                if (name != "F1")
-                    scene.potentialNPCs.Add(new WeightedNPC() { 
-                        selection = Asset.Get<KurthNPC>("KurthNPC"), 
-                        weight = 250 
-                    });
-            });
-        }
-        private IEnumerator LoadMod()
-        {
-            yield return 1;
-            yield return "Creating npc...";
-            KurthNPC kurth = new NPCBuilder<KurthNPC>(Info)
-                .SetName("Kurth")
-                .SetMetaName("Kurth")
-                .SetEnum("Kurth")
-                .AddTrigger()
-                .AddHeatmap()
-                .AddLooker()
-                .AddSpawnableRoomCategories(RoomCategory.Null)
-                .SetPoster(AssetLoader.TextureFromMod(Instance, "KurthPoster.png"), "PST_Kurth_Name", "PST_Kurth_Desc")
-                .Build();
-            kurth.InitializeNPC();
-            Asset.Add<KurthNPC>("KurthNPC", kurth);
-        }
 
+        }
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                    TABSwitcher.SwitchToPrevious();
+                else
+                    TABSwitcher.SwitchToNext();
+            }
+            if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
+            {
+                TABSwitcher.Chosen?.Click();
+            }
+            TABSwitcher.switchers = new HashSet<TABSwitcher>(TABSwitcher.switchers.OrderByDescending(x => x.transform.position.y).ThenBy(x => x.transform.position.x));
+        }
     }
 }
